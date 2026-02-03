@@ -6,12 +6,12 @@ terraform {
     }
   }
 
- backend "s3" {
-    bucket = "vcube138-2026-aws"
-    key    = "infra-sg"
-    region = "us-east-1"
-    dynamodb_table = "terraform-lock-table"
-  }
+#  backend "s3" {
+#     bucket = "vcube138-2026-aws"
+#     key    = "infra-sg"
+#     region = "us-east-1"
+#     dynamodb_table = "terraform-lock-table"
+#   }
 }
 
 provider "aws" {
