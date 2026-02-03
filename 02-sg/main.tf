@@ -46,7 +46,67 @@ module "rabbitmq" {
   # sg_ingress_rules = var.mogodb_ingress_rules
 }
 
-module "openvpn" {
+module "catalogue" {
+  source         = "git::https://github.com/akkimahesh/terraform-aws-security-group.git?ref=main"
+  vpc_id         = data.aws_ssm_parameter.vpc_id.value
+  sg_description = "Security group for catalogue servers"
+  common_tags    = var.common_tags
+  sg_tags        = var.sg_tags
+  project_name   = var.project_name
+  environment    = var.environment
+  sg_name        = "catalogue-sg"
+  # sg_ingress_rules = var.mogodb_ingress_rules
+}
+
+module "user" {
+  source         = "git::https://github.com/akkimahesh/terraform-aws-security-group.git?ref=main"
+  vpc_id         = data.aws_ssm_parameter.vpc_id.value
+  sg_description = "Security group for user servers"
+  common_tags    = var.common_tags
+  sg_tags        = var.sg_tags
+  project_name   = var.project_name
+  environment    = var.environment
+  sg_name        = "user-sg"
+  # sg_ingress_rules = var.mogodb_ingress_rules
+}
+
+module "cart" {
+  source         = "git::https://github.com/akkimahesh/terraform-aws-security-group.git?ref=main"
+  vpc_id         = data.aws_ssm_parameter.vpc_id.value
+  sg_description = "Security group for cart servers"
+  common_tags    = var.common_tags
+  sg_tags        = var.sg_tags
+  project_name   = var.project_name
+  environment    = var.environment
+  sg_name        = "cart-sg"
+  # sg_ingress_rules = var.mogodb_ingress_rules
+}
+
+module "shipping" {
+  source         = "git::https://github.com/akkimahesh/terraform-aws-security-group.git?ref=main"
+  vpc_id         = data.aws_ssm_parameter.vpc_id.value
+  sg_description = "Security group for shipping servers"
+  common_tags    = var.common_tags
+  sg_tags        = var.sg_tags
+  project_name   = var.project_name
+  environment    = var.environment
+  sg_name        = "shipping-sg"
+  # sg_ingress_rules = var.mogodb_ingress_rules
+}
+
+module "payments" {
+  source         = "git::https://github.com/akkimahesh/terraform-aws-security-group.git?ref=main"
+  vpc_id         = data.aws_ssm_parameter.vpc_id.value
+  sg_description = "Security group for payments servers"
+  common_tags    = var.common_tags
+  sg_tags        = var.sg_tags
+  project_name   = var.project_name
+  environment    = var.environment
+  sg_name        = "payments-sg"
+  # sg_ingress_rules = var.mogodb_ingress_rules
+}
+
+module "vpn" {
   source         = "git::https://github.com/akkimahesh/terraform-aws-security-group.git?ref=main"
   vpc_id         = data.aws_vpc.default.id
   sg_description = "Security group for openvpn servers"
@@ -70,8 +130,19 @@ module "app_alb" {
   # sg_ingress_rules = var.web_ingress_rules
 }
 
+module "web_alb" {
+  source         = "git::https://github.com/akkimahesh/terraform-aws-security-group.git?ref=main"
+  vpc_id         = data.aws_ssm_parameter.vpc_id.value
+  sg_description = "Security group for web_alb"
+  common_tags    = var.common_tags
+  sg_tags        = var.sg_tags
+  project_name   = var.project_name
+  environment    = var.environment
+  sg_name        = "web_alb"
+  # sg_ingress_rules = var.web_ingress_rules
+}
 resource "aws_security_group_rule" "mongodb_from_openvpn" {
-  source_security_group_id = module.openvpn.sg_id
+  source_security_group_id = module.vpn.sg_id
   type              = "ingress"
   from_port         = 22
   to_port           = 22
@@ -86,20 +157,31 @@ resource "aws_security_group_rule" "mongodb" {
   cidr_blocks = ["0.0.0.0/0"]
   security_group_id = module.mongodb.sg_id
 }
-resource "aws_security_group_rule" "openvpn" {
+
+resource "aws_security_group_rule" "vpn" {
   type              = "ingress"
   from_port         = 0
   to_port           = 65535
   protocol          = "all"
   cidr_blocks = ["0.0.0.0/0"]
-  security_group_id = module.openvpn.sg_id
+  security_group_id = module.vpn.sg_id
 }
 
-# resource "aws_security_group_rule" "alb" {
-#   source_security_group_id = module.web.sg_id
-#   type              = "ingress"
-#   from_port         = 80
-#   to_port           = 80
-#   protocol          = "tcp"
-#   security_group_id = module.app_alb.sg_id
-# }
+resource "aws_security_group_rule" "app_alb_vpn" {
+  source_security_group_id = module.vpn.sg_id
+  type                     = "ingress"
+  from_port                = 80
+  to_port                  = 80
+  protocol                 = "tcp"
+  security_group_id        = module.app_alb.sg_id
+}
+
+resource "aws_security_group_rule" "app_alb_web" {
+  source_security_group_id = module.web.sg_id
+  type                     = "ingress"
+  from_port                = 80
+  to_port                  = 80
+  protocol                 = "tcp"
+  security_group_id        = module.app_alb.sg_id
+}
+
